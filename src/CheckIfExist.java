@@ -9,6 +9,10 @@ import org.junit.jupiter.api.Test;
  * Podaj szacowaną złożoność obliczeniową oraz pamięciową.
  */
 
+/**
+ * Uzyskana złożoność obliczeniowa to O(log(n)) dla n będącego długością tablicy
+ * Uzsykana złożonośc pamięciowa to O(1) - nie tworzę nowych struktur danych
+ */
 public class CheckIfExist {
     @Test
     public void testSearch(){
