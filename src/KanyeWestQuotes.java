@@ -3,6 +3,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Napisz program, który wykorzysta API Kanye Rest https://kanye.rest/ by każdorazowo zaproponować nową perełkę mądrości
@@ -17,7 +22,9 @@ public class KanyeWestQuotes {
     public static void main(String[] args) {
         try {
             System.out.println(
-                    sendGet()
+                    stripQuoteFromJSON(
+                            sendGet()
+                    )
             );
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -50,5 +57,26 @@ public class KanyeWestQuotes {
             System.out.println("GET request failed. Response code = " + responseCode);
             return "";
         }
+    }
+
+    private static String stripQuoteFromJSON(String jsonString) {
+        if (jsonString == null)
+            return "";
+
+        String quote = jsonString
+                .replaceAll(Pattern.compile(".*[{]").pattern(), "")
+                .replaceAll(Pattern.compile("[}].*").pattern(), "");
+
+        if (quote.isEmpty())
+            return "";
+
+        Map<String, String> jsonMap = Stream.of(quote)
+                .map(str -> str.split(":"))
+                .collect(toMap(str -> str[0], str -> str[1]));
+
+        if (jsonMap.isEmpty())
+            return "";
+
+        return jsonMap.values().stream().findFirst().get();
     }
 }
