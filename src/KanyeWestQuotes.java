@@ -3,7 +3,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -18,17 +20,37 @@ import static java.util.stream.Collectors.toMap;
 
 public class KanyeWestQuotes {
     private final static String API_URL = "https://api.kanye.rest/";
+    private final static int MAX_ITERATIONS = 1000;
+    private final static Set<String> quotes = new HashSet<>();
 
     public static void main(String[] args) {
         try {
-            System.out.println(
-                    stripQuoteFromJSON(
-                            sendGet()
-                    )
-            );
+            for (int i = 0; i < 10; i++) {
+                System.out.println(
+                        getQuote()
+                );
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static String getQuote(int maxIterations) throws IOException {
+        String quote;
+
+        for (int i = 0; i < maxIterations; i++) {
+            quote = stripQuoteFromJSON(
+                    sendGet()
+            );
+            if (distinctQuotes(quote))
+                return quote;
+        }
+
+        throw new IndexOutOfBoundsException();
+    }
+
+    public static String getQuote() throws IOException {
+        return getQuote(MAX_ITERATIONS);
     }
 
     private static String sendGet() throws IOException {
@@ -78,5 +100,13 @@ public class KanyeWestQuotes {
             return "";
 
         return jsonMap.values().stream().findFirst().get();
+    }
+
+    private static boolean distinctQuotes(String quote) {
+        if (!quotes.contains(quote)) {
+            quotes.add(quote);
+            return true;
+        }
+        return false;
     }
 }
