@@ -5,6 +5,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -20,18 +21,48 @@ import static java.util.stream.Collectors.toMap;
 
 public class KanyeWestQuotes {
     private final static String API_URL = "https://api.kanye.rest/";
-    private final static int MAX_ITERATIONS = 1000;
+    private final static int MAX_ITERATIONS = 100;
     private final static Set<String> quotes = new HashSet<>();
 
     public static void main(String[] args) {
+        play();
+    }
+
+    private static void play() {
+        final String YES = "next";
+        final String NO = "hell no";
+
+        System.out.println("Objawiona krynica mądrości powiedziała:");
+
         try {
-            for (int i = 0; i < 10; i++) {
-                System.out.println(
-                        getQuote()
-                );
-            }
+            System.out.println(getQuote());
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+
+        while (true) {
+            System.out.println("\nCzy jesteś gotów usłyszeć kolejne słowa wieszcza Ye? [" + YES + "/" + NO + "]");
+            Scanner scanner = new Scanner(System.in);
+            String userResponse = scanner.nextLine();
+
+            // tylko dla odważnych
+            // String userResponse = YES;
+
+            if (userResponse.equalsIgnoreCase(YES)){
+                try {
+                    System.out.println(getQuote());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                continue;
+            }
+
+            if (userResponse.equalsIgnoreCase(NO)) {
+                System.out.println("Wróć gdy będziesz gotów...");
+                break;
+            }
+            else
+                System.out.println("Nie rozpoznano polecenia. Wpisz komendę: " + YES + " lub " + NO);
         }
     }
 
@@ -46,7 +77,7 @@ public class KanyeWestQuotes {
                 return quote;
         }
 
-        throw new IndexOutOfBoundsException();
+        throw new WyschlaKrynicaMadrosciException();
     }
 
     public static String getQuote() throws IOException {
