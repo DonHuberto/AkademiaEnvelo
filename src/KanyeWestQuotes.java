@@ -21,14 +21,31 @@ import static java.util.stream.Collectors.toMap;
 
 public class KanyeWestQuotes {
     private final static String API_URL = "https://api.kanye.rest/";
-    private final static int MAX_ITERATIONS = 100;
+    private final static String RAW_QUOTES_URL = "https://raw.githubusercontent.com/ajzbc/kanye.rest/master/quotes.json";
+    private static int MAX_ITERATIONS;
     private final static Set<String> quotes = new HashSet<>();
 
-    public static void main(String[] args) {
-        play();
+    public KanyeWestQuotes(){
+        MAX_ITERATIONS = quotesSize();
     }
 
-    private static void play() {
+
+    public static void main(String[] args) {
+        new KanyeWestQuotes().play();
+    }
+
+    /**
+     * Start your path to enlightenment and open your mind to become wiser with every quote you get.
+     */
+    public void play(){
+        play(true);
+    }
+
+    /**
+     * Start your path to enlightenment and open your mind to become wiser with every quote you get.
+     * @param debugMode developer mode, if enabled it turns off the need of use console commands
+     */
+    private void play(boolean debugMode) {
         final String YES = "next";
         final String NO = "hell no";
 
@@ -40,15 +57,23 @@ public class KanyeWestQuotes {
             throw new RuntimeException(e);
         }
 
+        int count=1;
         while (true) {
-            System.out.println("\nCzy jesteś gotów usłyszeć kolejne słowa wieszcza Ye? [" + YES + "/" + NO + "]");
+            if(debugMode)
+                System.out.print("Quotes = " + ++count + " || ");
+            else
+                System.out.println("\nCzy jesteś gotów usłyszeć kolejne słowa wieszcza Ye? [" + YES + "/" + NO + "]");
+
             Scanner scanner = new Scanner(System.in);
-            String userResponse = scanner.nextLine();
+            String userResponse;
 
-            // tylko dla odważnych
-            // String userResponse = YES;
+            // to tylko na potrzeby sprawdzenia poprawności połączenia
+            if(debugMode)
+                userResponse = YES;
+            else
+                userResponse = scanner.nextLine();
 
-            if (userResponse.equalsIgnoreCase(YES)){
+            if (userResponse.equalsIgnoreCase(YES)) {
                 try {
                     System.out.println(getQuote());
                 } catch (IOException e) {
@@ -60,13 +85,16 @@ public class KanyeWestQuotes {
             if (userResponse.equalsIgnoreCase(NO)) {
                 System.out.println("Wróć gdy będziesz gotów...");
                 break;
-            }
-            else
+            } else
                 System.out.println("Nie rozpoznano polecenia. Wpisz komendę: " + YES + " lub " + NO);
         }
     }
 
-    private static String getQuote(int maxIterations) throws IOException {
+    /**
+     * Returns quote as String.
+     * @param maxIterations maximum number of tries to send GET request and received distinct quote in response
+     */
+    private String getQuote(int maxIterations) throws IOException {
         String quote;
 
         for (int i = 0; i < maxIterations; i++) {
@@ -80,11 +108,15 @@ public class KanyeWestQuotes {
         throw new WyschlaKrynicaMadrosciException();
     }
 
-    public static String getQuote() throws IOException {
+    public String getQuote() throws IOException {
         return getQuote(MAX_ITERATIONS);
     }
 
-    private static String sendGet() throws IOException {
+    /**
+     * Send GET to https://api.kanye.rest/
+     * If response code was OK (200) method returns response.
+     */
+    private String sendGet() throws IOException {
         URL url = new URL(API_URL);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
@@ -107,12 +139,15 @@ public class KanyeWestQuotes {
 
             return response.toString();
         } else {
-            System.out.println("GET request failed. Response code = " + responseCode);
-            return "";
+            throw new IOException("GET request failed. Response code = " + responseCode);
         }
     }
 
-    private static String stripQuoteFromJSON(String jsonString) {
+    /**
+     * Quotes are given in JSON format. This method strips quote value out of JSON String and returns it as String.
+     * @param jsonString JSON String given as response to GET request to https://api.kanye.rest/
+     */
+    private String stripQuoteFromJSON(String jsonString) {
         if (jsonString == null)
             return "";
 
@@ -133,11 +168,52 @@ public class KanyeWestQuotes {
         return jsonMap.values().stream().findFirst().get();
     }
 
-    private static boolean distinctQuotes(String quote) {
+    /**
+     * Checks if quote was already used.
+     * If no: quote is added to set and returns true.
+     * If yes: returns false.
+     */
+    private boolean distinctQuotes(String quote) {
         if (!quotes.contains(quote)) {
             quotes.add(quote);
             return true;
         }
         return false;
+    }
+
+    /**
+     *  All quotes are taken from: https://github.com/ajzbc/kanye.rest/blob/master/quotes.json
+     *  Returns number of quotes
+     */
+    private int quotesSize() {
+        try {
+            URL url = new URL(RAW_QUOTES_URL);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader input = new BufferedReader(
+                        new InputStreamReader(
+                                connection.getInputStream()
+                        )
+                );
+                int count = 0;
+                String line;
+                while ((line = input.readLine()) != null) {
+                    if (line.contains("\""))
+                        count++;
+                }
+                input.close();
+
+                return count;
+
+            } else {
+                System.out.println("GET request failed. Response code = " + responseCode);
+                return -1;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
